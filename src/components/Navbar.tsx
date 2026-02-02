@@ -32,10 +32,7 @@ export default function Navbar() {
               <a onClick={() => navigate("/profile")}>Profile</a>
             </li>
             <li>
-              <a>Settings</a>
-            </li>
-            <li>
-              <a>Logout</a>
+              <a onClick={() => navigate("/logout")}>Logout</a>
             </li>
           </ul>
         </div>

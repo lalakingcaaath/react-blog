@@ -1,12 +1,60 @@
+import { useState } from "react";
+import supabase from "../config/supabaseClient";
 import { useNavigate } from "react-router";
 
 export default function Register() {
+  const [firstName, setfirstName] = useState("");
+  const [lastName, setlastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+
   const navigate = useNavigate();
+
+  const handleSubmit = async (event: { preventDefault: () => void }) => {
+    event.preventDefault();
+    setMessage("");
+
+    // 1. Sign up the user
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+    });
+
+    if (error) {
+      setMessage("Error: " + error.message);
+      return;
+    }
+
+    if (data.user) {
+      const { error: profileError } = await supabase
+        .from("user_profiles")
+        .insert([
+          {
+            id: data.user.id,
+            firstName: firstName,
+            lastName: lastName,
+          },
+        ]);
+
+      if (profileError) {
+        setMessage("User created, but profile failed: " + profileError.message);
+      } else {
+        setMessage("Registration successful!");
+      }
+    }
+
+    setfirstName("");
+    setlastName("");
+    setEmail("");
+    setPassword("");
+  };
 
   return (
     <div className="hero bg-base-200 min-h-screen">
       <div className="hero-content flex-col lg:flex-row-reverse">
         <div className="text-center lg:text-left">
+          {message && <p className="mb-4 text-center">{message}</p>}
           <h1 className="text-5xl font-bold">Create your account now!</h1>
           <p className="py-6">
             Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda
@@ -16,9 +64,10 @@ export default function Register() {
         </div>
         <div className="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
           <div className="card-body">
-            <fieldset className="fieldset">
+            <form className="fieldset" onSubmit={handleSubmit}>
               <label className="label">First Name</label>
               <input
+                onChange={(e) => setfirstName(e.target.value)}
                 type="text"
                 className="input"
                 placeholder="First Name"
@@ -26,6 +75,7 @@ export default function Register() {
               />
               <label className="label">Last Name</label>
               <input
+                onChange={(e) => setlastName(e.target.value)}
                 type="text"
                 className="input"
                 placeholder="Last Name"
@@ -33,6 +83,7 @@ export default function Register() {
               />
               <label className="label">Email</label>
               <input
+                onChange={(e) => setEmail(e.target.value)}
                 type="email"
                 className="input"
                 placeholder="Email"
@@ -40,6 +91,7 @@ export default function Register() {
               />
               <label className="label">Password</label>
               <input
+                onChange={(e) => setPassword(e.target.value)}
                 type="password"
                 className="input"
                 placeholder="Password"
@@ -53,8 +105,8 @@ export default function Register() {
                   Already have an account?
                 </a>
               </div>
-              <button className="btn btn-neutral mt-4">Login</button>
-            </fieldset>
+              <button className="btn btn-neutral mt-4">Register</button>
+            </form>
           </div>
         </div>
       </div>

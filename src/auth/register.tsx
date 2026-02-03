@@ -15,7 +15,6 @@ export default function Register() {
     event.preventDefault();
     setMessage("");
 
-    // 1. Sign up the user
     const { data, error } = await supabase.auth.signUp({
       email: email,
       password: password,
@@ -40,7 +39,7 @@ export default function Register() {
       if (profileError) {
         setMessage("User created, but profile failed: " + profileError.message);
       } else {
-        setMessage("Registration successful!");
+        alert("Registration successful!");
       }
     }
 
@@ -68,6 +67,7 @@ export default function Register() {
               <label className="label">First Name</label>
               <input
                 onChange={(e) => setfirstName(e.target.value)}
+                value={firstName}
                 type="text"
                 className="input"
                 placeholder="First Name"
@@ -76,6 +76,7 @@ export default function Register() {
               <label className="label">Last Name</label>
               <input
                 onChange={(e) => setlastName(e.target.value)}
+                value={lastName}
                 type="text"
                 className="input"
                 placeholder="Last Name"
@@ -84,6 +85,7 @@ export default function Register() {
               <label className="label">Email</label>
               <input
                 onChange={(e) => setEmail(e.target.value)}
+                value={email}
                 type="email"
                 className="input"
                 placeholder="Email"
@@ -92,6 +94,7 @@ export default function Register() {
               <label className="label">Password</label>
               <input
                 onChange={(e) => setPassword(e.target.value)}
+                value={password}
                 type="password"
                 className="input"
                 placeholder="Password"

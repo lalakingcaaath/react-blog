@@ -1,7 +1,17 @@
 import { useNavigate } from "react-router";
+import supabase from "../config/supabaseClient";
 
 export default function Navbar() {
   const navigate = useNavigate();
+
+  async function signOut() {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.log("Error: " + error);
+    } else {
+      navigate("/logout");
+    }
+  }
 
   return (
     <div className="navbar bg-base-100 shadow-sm">
@@ -32,7 +42,7 @@ export default function Navbar() {
               <a onClick={() => navigate("/profile")}>Profile</a>
             </li>
             <li>
-              <a onClick={() => navigate("/logout")}>Logout</a>
+              <a onClick={signOut}>Logout</a>
             </li>
           </ul>
         </div>

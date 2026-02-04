@@ -16,7 +16,6 @@ export default function Navbar() {
       console.log("Error: " + error);
     } else {
       dispatch(logout());
-      navigate("/logout");
     }
   }
 

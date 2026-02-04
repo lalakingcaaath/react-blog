@@ -1,8 +1,10 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import supabase from "../config/supabaseClient";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import type { RootState } from "../redux/store";
 
 export default function CreatePost() {
   const navigate = useNavigate();
@@ -11,29 +13,13 @@ export default function CreatePost() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [resetKey, setResetKey] = useState(0);
 
-  // Check if user is logged in
-  useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        alert("Please log in to create a post.");
-        navigate("/login");
-      }
-    };
-    checkUser();
-  }, [navigate]);
+  const user_id = useSelector((state: RootState) => state.user.id);
 
-  const handleSubmit = async (event: { preventDefault: () => void }) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      alert("You must be logged in to post!");
+    if (!user_id) {
+      alert("You must be logged in to post.");
       return;
     }
 
@@ -44,14 +30,16 @@ export default function CreatePost() {
 
       const { data, error } = await supabase.storage
         .from("blog-post")
-        .upload(fileName, imageFile || undefined);
+        .upload(fileName, imageFile);
 
       if (error) {
         console.log("Error uploading image:", error);
+        alert("Failed to upload image.");
+        return;
       } else {
         console.log("Image uploaded successfully:", data);
+        filePath = fileName;
       }
-      filePath = fileName;
     }
 
     const { error } = await supabase.from("blog-post").insert([
@@ -59,60 +47,68 @@ export default function CreatePost() {
         title: title,
         content: content,
         imageUpload: filePath,
-        user_id: user.id,
+        user_id: user_id,
       },
     ]);
 
     if (error) {
       console.log("Error creating blog post:", error);
-      alert("Error creating post");
+      alert("Error creating post: " + error.message);
     } else {
       console.log("Blog post created successfully");
-      alert("Blog post created");
-      navigate("/"); // Go back home after success
+      alert("Blog post created!");
+      navigate("/");
     }
-
-    // Reset form
-    setTitle("");
-    setContent("");
-    setImageFile(null);
-    setResetKey((prevKey) => prevKey + 1);
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar></Navbar>
+    <div className="flex flex-col min-h-screen bg-base-200">
+      <Navbar />
       <div className="container mx-auto p-4 space-y-4 max-w-3xl grow">
-        {/* Original Design Container */}
-        <div className="flex flex-col gap-10 border border-black p-6 py-8 rounded-3xl">
+        <div className="flex flex-col gap-10 bg-base-100 shadow-xl p-6 py-8 rounded-3xl mt-10">
           <h2 className="text-4xl font-bold text-center">Create a Post</h2>
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            <label htmlFor="title">Blog Title</label>
+            <label htmlFor="title" className="font-semibold">
+              Blog Title
+            </label>
             <input
+              id="title"
               onChange={(e) => setTitle(e.target.value)}
               value={title}
               type="text"
               placeholder="Blog Title (e.g. What's cooking?)"
-              className="border border-black rounded-md p-2"
+              className="input input-bordered w-full"
+              required
             />
-            <label htmlFor="description">Description</label>
+
+            <label htmlFor="description" className="font-semibold">
+              Description
+            </label>
             <textarea
+              id="description"
               onChange={(e) => setContent(e.target.value)}
               value={content}
-              name="description"
-              id="description"
               placeholder="Your post description goes here..."
               rows={5}
-              className="border border-black rounded-lg p-2"
+              className="textarea textarea-bordered text-base"
+              required
             ></textarea>
+
+            <label className="font-semibold">Cover Image (Optional)</label>
             <input
-              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
               key={resetKey}
+              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
               type="file"
-              className="file-input"
-              accept="image/jpeg, image/png"
+              className="file-input file-input-bordered w-full"
+              accept="image/jpeg, image/png, image/webp"
             />
-            <input type="submit" value="Submit" className="btn" />
+
+            <input
+              type="submit"
+              value="Publish Post"
+              className="btn btn-neutral mt-4"
+              disabled={!title || !content}
+            />
           </form>
         </div>
       </div>

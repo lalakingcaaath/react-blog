@@ -1,36 +1,37 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Bloglist from "../components/Bloglist";
 import supabase from "../config/supabaseClient";
+import type { Blogposts } from "../types/Blogposts";
 
 export default function Home() {
-  useEffect(() => {
-    const testConnection = async () => {
-      console.log("Testing connection...");
+  const [posts, setPosts] = useState<Blogposts[]>([]);
 
+  useEffect(() => {
+    const fetchPosts = async () => {
       const { data, error } = await supabase
         .from("blog-post")
         .select("*")
-        .limit(1);
+        .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Connection failed:", error.message);
-      } else {
-        console.log("Connection successful! Data:", data);
+        console.error("Fetch error:", error.message);
+      } else if (data) {
+        setPosts(data as Blogposts[]);
       }
     };
 
-    testConnection();
+    fetchPosts();
   }, []);
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <div className="container mx-auto p-4 space-y-4 max-w-5xl grow">
-        <Bloglist />
-        <Bloglist />
-        <Bloglist />
+      <div className="container mx-auto p-4 space-y-6 max-w-5xl grow">
+        {posts.map((post) => (
+          <Bloglist key={post.id} post={post} />
+        ))}
       </div>
       <Footer />
     </div>

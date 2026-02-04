@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { setUser, logout } from "./redux/userSlice";
 import supabase from "./config/supabaseClient";
@@ -6,57 +6,55 @@ import { Outlet } from "react-router-dom";
 
 function App() {
   const dispatch = useDispatch();
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    const fetchProfileAndSetUser = async (
-      userId: string,
-      email: string | undefined,
-    ) => {
-      const { data: profile, error } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-
-      if (profile && !error) {
-        dispatch(
-          setUser({
-            id: userId,
-            email: email || "",
-            firstName: profile.firstName,
-            lastName: profile.lastName,
-          }),
-        );
-      }
-    };
-
-    const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
+    const handleSession = async (session: any) => {
       if (session?.user) {
-        fetchProfileAndSetUser(session.user.id, session.user.email);
-      } else {
-        dispatch(logout()); // Ensure state is clear if no session
-      }
-    };
-    checkUser();
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          fetchProfileAndSetUser(session.user.id, session.user.email);
-        } else {
-          dispatch(logout());
+        if (profile) {
+          dispatch(
+            setUser({
+              id: session.user.id,
+              email: session.user.email || "",
+              firstName: profile.firstName,
+              lastName: profile.lastName,
+            }),
+          );
         }
-      },
-    );
+      } else {
+        dispatch(logout());
+      }
+      setAuthChecked(true);
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleSession(session);
+    });
 
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, [dispatch]);
+
+  if (!authChecked) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </div>
+    );
+  }
 
   return <Outlet />;
 }

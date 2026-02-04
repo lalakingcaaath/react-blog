@@ -28,7 +28,6 @@ export default function CreatePost() {
   const handleSubmit = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
 
-    // 1. Get current user
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -41,7 +40,6 @@ export default function CreatePost() {
     let filePath = null;
 
     if (imageFile) {
-      // Added Date.now() to ensure unique filenames
       const fileName = `${Date.now()}_${imageFile.name}`;
 
       const { data, error } = await supabase.storage
@@ -56,13 +54,12 @@ export default function CreatePost() {
       filePath = fileName;
     }
 
-    // 2. Insert post with user_id
     const { error } = await supabase.from("blog-post").insert([
       {
         title: title,
         content: content,
         imageUpload: filePath,
-        user_id: user.id, // <--- This links it to your profile
+        user_id: user.id,
       },
     ]);
 

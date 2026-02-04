@@ -11,12 +11,35 @@ export default function ViewPost() {
   const [post, setPost] = useState<Blogposts | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
+
+  const handleDelete = async () => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this post? This cannot be undone.",
+    );
+
+    if (!confirmDelete) return;
+
+    if (post?.imageUpload) {
+      await supabase.storage.from("blog-post").remove([post.imageUpload]);
+    }
+
+    const { error } = await supabase.from("blog-post").delete().eq("id", id);
+
+    if (error) {
+      console.log("Error deleting:", error);
+      alert("Error deleting post");
+    } else {
+      alert("Post deleted!");
+      navigate("/");
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
 
-    const fetchPost = async () => {
-      const { data, error } = await supabase
+    const fetchPostAndUser = async () => {
+      const { data: postData, error } = await supabase
         .from("blog-post")
         .select("*")
         .eq("id", id)
@@ -24,63 +47,73 @@ export default function ViewPost() {
 
       if (error) {
         console.error("Error fetching post:", error);
-      } else if (data) {
-        setPost(data);
+      } else if (postData) {
+        setPost(postData);
 
-        if (data.imageUpload) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user && user.id === postData.user_id) {
+          setIsOwner(true);
+        }
+
+        if (postData.imageUpload) {
           const { data: imgData } = supabase.storage
             .from("blog-post")
-            .getPublicUrl(data.imageUpload);
+            .getPublicUrl(postData.imageUpload);
           setImageUrl(imgData.publicUrl);
         }
       }
       setLoading(false);
     };
 
-    fetchPost();
+    fetchPostAndUser();
   }, [id]);
 
   if (loading)
     return (
-      <div className="min-h-screen flex justify-center items-center bg-base-200">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+      <div className="min-h-screen flex justify-center items-center">
+        <span className="loading loading-spinner loading-lg"></span>
       </div>
     );
+  if (!post) return <div>Post not found</div>;
 
-  if (!post)
-    return (
-      <div className="min-h-screen flex flex-col justify-center items-center bg-base-200 gap-4">
-        <h2 className="text-2xl font-bold">Post not found</h2>
-        <button className="btn btn-primary" onClick={() => navigate("/")}>
-          Go Home
-        </button>
-      </div>
-    );
+  const displayDate = post.updated_at
+    ? new Date(post.updated_at)
+    : new Date(post.created_at);
+
+  const dateLabel = post.updated_at ? "Last Updated" : "Published on";
 
   return (
     <div className="flex flex-col min-h-screen bg-base-200">
       <Navbar />
-
       <main className="container mx-auto p-4 max-w-4xl grow">
-        <button
-          onClick={() => navigate(-1)}
-          className="btn btn-ghost btn-sm mb-4 gap-2 pl-0 hover:bg-transparent"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="flex justify-between items-center mb-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="btn btn-ghost gap-2 pl-0"
           >
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-          Back to posts
-        </button>
+            ← Back
+          </button>
+
+          {isOwner && (
+            <div className="flex gap-2">
+              <button
+                className="btn btn-neutral"
+                onClick={() => navigate(`/editpost/${post.id}`)}
+              >
+                Edit Post
+              </button>
+              <button
+                className="btn btn-error text-white"
+                onClick={handleDelete}
+              >
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="card bg-base-100 shadow-xl overflow-hidden">
           {imageUrl && (
@@ -90,37 +123,28 @@ export default function ViewPost() {
                 alt={post.title || "Blog Post"}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
-              <div className="absolute bottom-4 left-6 text-white">
-                <div className="badge badge-primary mb-2">Blog</div>
-              </div>
             </figure>
           )}
-
           <div className="card-body md:p-10">
-            {/* Title & Date */}
-            <div className="mb-6 border-b border-base-200 pb-4">
-              <h1 className="text-3xl md:text-5xl font-extrabold mb-2 text-base-content">
-                {post.title || "Untitled"}
-              </h1>
-              <p className="text-sm text-base-content/60 flex items-center gap-2">
-                <span>Published on</span>
-                <time className="font-medium">
-                  {new Date(post.created_at).toLocaleDateString(undefined, {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </time>
-              </p>
-            </div>
-            <article className="prose prose-lg max-w-none text-base-content/80 whitespace-pre-wrap leading-relaxed">
+            <h1 className="text-3xl md:text-5xl font-extrabold mb-2">
+              {post.title}
+            </h1>
+            <p className="text-sm text-base-content/60 flex items-center gap-2 mb-6">
+              <span className="font-semibold">{dateLabel}:</span>
+              <time>
+                {displayDate.toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </time>
+            </p>
+            <article className="prose prose-lg max-w-none whitespace-pre-wrap">
               {post.content}
             </article>
           </div>
         </div>
       </main>
-
       <Footer />
     </div>
   );

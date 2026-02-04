@@ -6,6 +6,7 @@ import Login from "./auth/login";
 import Register from "./auth/register";
 import Logout from "./pages/logout";
 import CreatePost from "./pages/createpost";
+import ViewPost from "./pages/viewBlog";
 
 export const router = createBrowserRouter([
   {
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
       { path: "register", element: <Register /> },
       { path: "logout", element: <Logout /> },
       { path: "createpost", element: <CreatePost /> },
+      { path: "viewpost/:id", element: <ViewPost /> },
     ],
   },
 ]);

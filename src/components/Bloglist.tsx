@@ -1,11 +1,14 @@
 import type { Blogposts } from "../types/Blogposts";
 import supabase from "../config/supabaseClient";
+import { useNavigate } from "react-router";
 
 type BloglistProps = {
   post: Blogposts;
 };
 
 export default function Bloglist({ post }: BloglistProps) {
+  const navigate = useNavigate();
+
   const { data } = supabase.storage
     .from("blog-post")
     .getPublicUrl(post.imageUpload || "");
@@ -46,7 +49,10 @@ export default function Bloglist({ post }: BloglistProps) {
               day: "numeric",
             })}
           </small>
-          <button className="btn btn-primary btn-sm md:btn-md">
+          <button
+            className="btn btn-primary btn-sm md:btn-md"
+            onClick={() => navigate(`/viewpost/${post.id}`)}
+          >
             Read more
           </button>
         </div>

@@ -4,6 +4,7 @@ export type Comments = {
   comment: string;
   post_id: number;
   user_id: string;
+  comment_image: string;
 
   user_profiles?: {
     firstName: string;

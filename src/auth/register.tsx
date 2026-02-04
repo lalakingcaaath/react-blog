@@ -1,6 +1,8 @@
 import { useState } from "react";
 import supabase from "../config/supabaseClient";
 import { useNavigate } from "react-router";
+import { useDispatch } from "react-redux";
+import { setUser } from "../redux/userSlice";
 
 export default function Register() {
   const [firstName, setfirstName] = useState("");
@@ -10,6 +12,7 @@ export default function Register() {
   const [message, setMessage] = useState("");
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleSubmit = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
@@ -39,7 +42,10 @@ export default function Register() {
       if (profileError) {
         setMessage("User created, but profile failed: " + profileError.message);
       } else {
+        dispatch(setUser(data.user));
+
         alert("Registration successful!");
+        navigate("/");
       }
     }
 
@@ -53,7 +59,9 @@ export default function Register() {
     <div className="hero bg-base-200 min-h-screen">
       <div className="hero-content flex-col lg:flex-row-reverse">
         <div className="text-center lg:text-left">
-          {message && <p className="mb-4 text-center">{message}</p>}
+          {message && (
+            <p className="mb-4 text-center text-red-500">{message}</p>
+          )}
           <h1 className="text-5xl font-bold">Create your account now!</h1>
           <p className="py-6">
             Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda
@@ -102,7 +110,7 @@ export default function Register() {
               />
               <div>
                 <a
-                  className="link link-hover"
+                  className="link link-hover cursor-pointer"
                   onClick={() => navigate("/login")}
                 >
                   Already have an account?

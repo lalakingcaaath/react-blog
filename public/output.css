@@ -2327,6 +2327,9 @@
   .h-full {
     height: 100%;
   }
+  .h-screen {
+    height: 100vh;
+  }
   .min-h-50 {
     min-height: calc(var(--spacing) * 50);
   }

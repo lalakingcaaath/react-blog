@@ -6,10 +6,17 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import CommentsSection from "../components/CommentSection";
 
+interface BlogPostWithAuthor extends Blogposts {
+  user_profiles: {
+    firstName: string;
+    lastName: string;
+  } | null;
+}
+
 export default function ViewPost() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [post, setPost] = useState<Blogposts | null>(null);
+  const [post, setPost] = useState<BlogPostWithAuthor | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isOwner, setIsOwner] = useState(false);
@@ -42,14 +49,19 @@ export default function ViewPost() {
     const fetchPostAndUser = async () => {
       const { data: postData, error } = await supabase
         .from("blog-post")
-        .select("*")
+        .select(
+          `
+          *,
+          user_profiles (firstName, lastName)
+        `,
+        )
         .eq("id", id)
         .single();
 
       if (error) {
         console.error("Error fetching post:", error);
       } else if (postData) {
-        setPost(postData);
+        setPost(postData as BlogPostWithAuthor);
 
         const {
           data: { user },
@@ -86,6 +98,10 @@ export default function ViewPost() {
 
   const dateLabel = post.updated_at ? "Last Updated" : "Published on";
 
+  const authorName = post.user_profiles
+    ? `${post.user_profiles.firstName} ${post.user_profiles.lastName}`
+    : "Unknown Author";
+
   return (
     <div className="flex flex-col min-h-screen bg-base-200">
       <Navbar />
@@ -116,7 +132,7 @@ export default function ViewPost() {
           )}
         </div>
 
-        <div className="card bg-base-100 shadow-xl overflow-hidden">
+        <div className="card bg-base-100 shadow-xl overflow-hidden mb-8">
           {imageUrl && (
             <figure className="w-full h-64 md:h-96 relative">
               <img
@@ -127,24 +143,40 @@ export default function ViewPost() {
             </figure>
           )}
           <div className="card-body md:p-10">
-            <h1 className="text-3xl md:text-5xl font-extrabold mb-2">
+            <h1 className="text-3xl md:text-5xl font-extrabold mb-4">
               {post.title}
             </h1>
-            <p className="text-sm text-base-content/60 flex items-center gap-2 mb-6">
-              <span className="font-semibold">{dateLabel}:</span>
-              <time>
-                {displayDate.toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </time>
-            </p>
+
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-base-content/70 mb-8 border-b border-base-200 pb-6">
+              <div className="flex items-center gap-2">
+                <div className="avatar placeholder">
+                  <div className="bg-neutral text-neutral-content rounded-full w-8">
+                    <span className="text-xs">{authorName.charAt(0)}</span>
+                  </div>
+                </div>
+                <span className="font-semibold">{authorName}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span>
+                  {dateLabel}{" "}
+                  <time className="font-medium">
+                    {displayDate.toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </time>
+                </span>
+              </div>
+            </div>
+
             <article className="prose prose-lg max-w-none whitespace-pre-wrap">
               {post.content}
             </article>
           </div>
         </div>
+
         <CommentsSection postId={Number(id)} />
       </main>
       <Footer />

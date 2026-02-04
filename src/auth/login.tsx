@@ -1,14 +1,21 @@
-import { useNavigate } from "react-router";
 import { useState } from "react";
 import supabase from "../config/supabaseClient";
+import { useNavigate } from "react-router";
+import { useDispatch } from "react-redux";
+import { setUser } from "../redux/userSlice";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleSubmit = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
+    setLoading(true);
     setMessage("");
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -18,37 +25,60 @@ export default function Login() {
 
     if (error) {
       setMessage("Error: " + error.message);
-      setEmail("");
-      setPassword("");
+      setLoading(false);
       return;
     }
 
-    if (data) {
-      navigate("/");
-      return null;
-    }
-  };
+    if (data.user) {
+      const { data: profile, error: profileError } = await supabase
+        .from("user_profiles")
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
 
-  const navigate = useNavigate();
+      if (profileError) {
+        setMessage("Login successful, but failed to load profile.");
+        console.error(profileError);
+      } else if (profile) {
+        dispatch(
+          setUser({
+            id: data.user.id,
+            email: data.user.email || "",
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+          }),
+        );
+
+        alert("Login successful!");
+        navigate("/");
+      }
+    }
+    setLoading(false);
+  };
 
   return (
     <div className="hero bg-base-200 min-h-screen">
-      {message && <p className="mb-4 text-center">{message}</p>}
       <div className="hero-content flex-col lg:flex-row-reverse">
         <div className="text-center lg:text-left">
           <h1 className="text-5xl font-bold">Login now!</h1>
           <p className="py-6">
-            Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda
-            excepturi exercitationem quasi. In deleniti eaque aut repudiandae et
-            a id nisi.
+            Welcome back! Please login to access your account and continue
+            blogging.
           </p>
         </div>
         <div className="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
           <div className="card-body">
+            {message && (
+              <div role="alert" className="alert alert-error text-sm py-2">
+                <span>{message}</span>
+              </div>
+            )}
+
             <form className="fieldset" onSubmit={handleSubmit}>
               <label className="label">Email</label>
               <input
                 onChange={(e) => setEmail(e.target.value)}
+                value={email}
                 type="email"
                 className="input"
                 placeholder="Email"
@@ -57,6 +87,7 @@ export default function Login() {
               <label className="label">Password</label>
               <input
                 onChange={(e) => setPassword(e.target.value)}
+                value={password}
                 type="password"
                 className="input"
                 placeholder="Password"
@@ -64,14 +95,19 @@ export default function Login() {
               />
               <div>
                 <a
-                  className="link link-hover"
+                  className="link link-hover cursor-pointer"
                   onClick={() => navigate("/register")}
                 >
-                  Don't have an account yet?
+                  Don't have an account? Register
                 </a>
               </div>
-              <button type="submit" className="btn btn-neutral mt-4">
-                Login
+
+              <button className="btn btn-neutral mt-4" disabled={loading}>
+                {loading ? (
+                  <span className="loading loading-spinner"></span>
+                ) : (
+                  "Login"
+                )}
               </button>
             </form>
           </div>

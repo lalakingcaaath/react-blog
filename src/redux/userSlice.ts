@@ -1,28 +1,29 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import type { User } from "@supabase/supabase-js";
+import type { UserProfiles } from "../types/userProfiles";
 
-interface UserState {
-  user: User | null;
-  loading: boolean;
-}
-
-const initialState: UserState = {
-  user: null,
-  loading: true,
+const initialState: UserProfiles = {
+  id: "",
+  firstName: "",
+  lastName: "",
+  email: "",
 };
 
 export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<User | null>) => {
-      state.user = action.payload;
-      state.loading = false;
+    setUser: (state, action: PayloadAction<UserProfiles>) => {
+      state.id = action.payload.id;
+      state.firstName = action.payload.firstName;
+      state.lastName = action.payload.lastName;
+      state.email = action.payload.email;
     },
     logout: (state) => {
-      state.user = null;
-      state.loading = false;
+      state.id = "";
+      state.firstName = "";
+      state.lastName = "";
+      state.email = "";
     },
   },
 });

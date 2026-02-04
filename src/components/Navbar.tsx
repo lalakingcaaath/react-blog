@@ -8,7 +8,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const user = useSelector((state: RootState) => state.user.user);
+  const user = useSelector((state: RootState) => state.user);
 
   async function handleSignOut() {
     const { error } = await supabase.auth.signOut();
@@ -28,7 +28,7 @@ export default function Navbar() {
         </a>
       </div>
       <div className="flex gap-2">
-        {user ? (
+        {user.id ? (
           <div className="dropdown dropdown-end">
             <div
               tabIndex={0}
@@ -46,6 +46,11 @@ export default function Navbar() {
               tabIndex={0}
               className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
             >
+              <li>
+                <span className="font-bold text-xs text-center block mb-2 opacity-50">
+                  {user.firstName} {user.lastName}
+                </span>
+              </li>
               <li>
                 <a onClick={() => navigate("/profile")}>Profile</a>
               </li>

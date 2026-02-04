@@ -4,6 +4,7 @@ import supabase from "../config/supabaseClient";
 import type { Blogposts } from "../types/Blogposts";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import CommentsSection from "../components/CommentSection";
 
 export default function ViewPost() {
   const { id } = useParams<{ id: string }>();
@@ -144,6 +145,7 @@ export default function ViewPost() {
             </article>
           </div>
         </div>
+        <CommentsSection postId={Number(id)} />
       </main>
       <Footer />
     </div>

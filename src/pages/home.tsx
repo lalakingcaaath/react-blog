@@ -12,7 +12,12 @@ export default function Home() {
     const fetchPosts = async () => {
       const { data, error } = await supabase
         .from("blog-post")
-        .select("*")
+        .select(
+          `
+          *,
+          user_profiles (firstName, lastName)
+        `,
+        )
         .order("created_at", { ascending: false });
 
       if (error) {

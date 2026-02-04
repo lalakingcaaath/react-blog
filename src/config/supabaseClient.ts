@@ -5,7 +5,6 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Add a small check to help you debug
 if (!supabaseUrl || !supabaseKey) {
   console.error(
     "Supabase environment variables are missing! Check your .env file.",

@@ -10,8 +10,12 @@ export default function EditPost() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [newPreviews, setNewPreviews] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -37,43 +41,74 @@ export default function EditPost() {
 
         setTitle(data.title);
         setContent(data.content);
+        if (data.images && Array.isArray(data.images)) {
+          setExistingImages(data.images);
+        }
         setLoading(false);
       }
     };
     fetchPost();
   }, [id, navigate]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const selectedFiles = Array.from(e.target.files);
+      setNewFiles((prev) => [...prev, ...selectedFiles]);
+
+      const urls = selectedFiles.map((file) => URL.createObjectURL(file));
+      setNewPreviews((prev) => [...prev, ...urls]);
+    }
+  };
+
+  const removeNewFile = (index: number) => {
+    URL.revokeObjectURL(newPreviews[index]);
+    setNewFiles((prev) => prev.filter((_, i) => i !== index));
+    setNewPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const markForDeletion = (path: string) => {
+    setExistingImages((prev) => prev.filter((p) => p !== path));
+    setImagesToDelete((prev) => [...prev, path]);
+  };
+
+  const getPublicUrl = (path: string) =>
+    supabase.storage.from("blog-post").getPublicUrl(path).data.publicUrl;
+
   const handleUpdate = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    let filePath = null;
-
-    if (imageFile) {
-      const fileName = `${Date.now()}_${imageFile.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("blog-post")
-        .upload(fileName, imageFile);
-
-      if (uploadError) console.log("Error uploading image:", uploadError);
-      filePath = fileName;
+    if (imagesToDelete.length > 0) {
+      await supabase.storage.from("blog-post").remove(imagesToDelete);
     }
 
-    const updateData: any = {
-      title: title,
-      content: content,
-    };
+    const uploadedPaths: string[] = [];
+    if (newFiles.length > 0) {
+      for (const file of newFiles) {
+        const fileName = `${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("blog-post")
+          .upload(fileName, file);
 
-    if (filePath) {
-      updateData.imageUpload = filePath;
+        if (uploadError) {
+          console.error("Error uploading image:", uploadError);
+          continue;
+        }
+        uploadedPaths.push(fileName);
+      }
     }
+
+    const finalImages = [...existingImages, ...uploadedPaths];
 
     const { error } = await supabase
       .from("blog-post")
-      .update(updateData)
+      .update({
+        title: title,
+        content: content,
+        images: finalImages,
+      })
       .eq("id", id);
 
     if (error) {
-      console.log("Error updating post:", error);
       alert("Error updating post");
     } else {
       alert("Post updated successfully!");
@@ -82,56 +117,142 @@ export default function EditPost() {
   };
 
   if (loading)
-    return <div className="p-10 text-center">Loading post data...</div>;
+    return (
+      <div className="min-h-screen flex justify-center items-center">
+        <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-base-200">
       <Navbar />
+
       <div className="container mx-auto p-4 space-y-4 max-w-3xl grow">
-        <div className="flex flex-col gap-10 border border-black p-6 py-8 rounded-3xl">
-          <h2 className="text-4xl font-bold text-center">Edit Post</h2>
+        <button
+          onClick={() => navigate(-1)}
+          className="btn btn-ghost gap-2 pl-0 hover:bg-transparent self-start"
+        >
+          ← Back
+        </button>
 
-          <form className="flex flex-col gap-4" onSubmit={handleUpdate}>
-            <label htmlFor="title">Blog Title</label>
-            <input
-              onChange={(e) => setTitle(e.target.value)}
-              value={title}
-              type="text"
-              className="border border-black rounded-md p-2"
-            />
+        <div className="flex flex-col gap-6 bg-base-100 shadow-xl p-6 py-8 rounded-3xl mt-2">
+          <h2 className="text-4xl font-bold text-center mb-4">Edit Post</h2>
 
-            <label htmlFor="description">Description</label>
-            <textarea
-              onChange={(e) => setContent(e.target.value)}
-              value={content}
-              rows={5}
-              className="border border-black rounded-lg p-2"
-            ></textarea>
-
-            <label className="text-sm text-gray-500">
-              Upload new cover image (Optional)
-            </label>
-            <input
-              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-              type="file"
-              className="file-input"
-              accept="image/jpeg, image/png"
-            />
-
-            <div className="flex gap-2 mt-4">
+          <form className="flex flex-col gap-6" onSubmit={handleUpdate}>
+            <div className="form-control w-full">
+              <label htmlFor="title" className="label font-semibold">
+                <span className="label-text">Blog Title</span>
+              </label>
               <input
-                type="submit"
-                value="Save Changes"
-                className="btn btn-neutral flex-1"
+                id="title"
+                onChange={(e) => setTitle(e.target.value)}
+                value={title}
+                type="text"
+                className="input input-bordered w-full"
+                required
               />
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => navigate(-1)}
-              >
-                Cancel
-              </button>
             </div>
+
+            <div className="form-control w-full">
+              <label htmlFor="description" className="label font-semibold">
+                <span className="label-text">Description</span>
+              </label>
+              <textarea
+                id="description"
+                onChange={(e) => setContent(e.target.value)}
+                value={content}
+                rows={6}
+                className="textarea textarea-bordered text-base w-full"
+                required
+              ></textarea>
+            </div>
+
+            <div className="form-control w-full">
+              <label className="label font-semibold">
+                <span className="label-text">Manage Images</span>
+              </label>
+
+              <div className="bg-base-200 rounded-2xl p-4 border-2 border-dashed border-base-300">
+                {existingImages.length > 0 && (
+                  <div className="mb-6">
+                    <span className="text-xs font-bold text-gray-500 mb-3 block uppercase tracking-wide">
+                      Current Images
+                    </span>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {existingImages.map((path, idx) => (
+                        <div
+                          key={idx}
+                          className="relative group w-full h-32 rounded-xl overflow-hidden shadow-sm border border-base-300"
+                        >
+                          <img
+                            src={getPublicUrl(path)}
+                            alt="Existing"
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => markForDeletion(path)}
+                            className="btn btn-circle btn-xs btn-error absolute top-2 right-2 shadow-sm text-white"
+                            title="Remove image"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="form-control w-full mb-4">
+                  <label className="label pt-0">
+                    <span className="label-text-alt">Add more images</span>
+                  </label>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    className="file-input file-input-bordered w-full"
+                    accept="image/jpeg, image/png, image/webp"
+                  />
+                </div>
+
+                {newPreviews.length > 0 && (
+                  <div>
+                    <span className="text-xs font-bold text-success mb-3 block uppercase tracking-wide">
+                      New Uploads Pending
+                    </span>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {newPreviews.map((url, idx) => (
+                        <div
+                          key={idx}
+                          className="relative group w-full h-32 rounded-xl overflow-hidden shadow-sm border-2 border-success"
+                        >
+                          <img
+                            src={url}
+                            alt="New Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeNewFile(idx)}
+                            className="btn btn-circle btn-xs btn-neutral absolute top-2 right-2 shadow-sm text-white"
+                            title="Remove upload"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <input
+              type="submit"
+              value="Save Changes"
+              className="btn btn-neutral mt-4 w-full md:w-auto md:self-end"
+            />
           </form>
         </div>
       </div>

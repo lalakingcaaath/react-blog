@@ -155,7 +155,6 @@ export default function CreatePost() {
                         alt={`Preview ${index}`}
                         className="w-full h-full object-cover"
                       />
-                      {/* Remove Button */}
                       <button
                         type="button"
                         onClick={() => removeImage(index)}

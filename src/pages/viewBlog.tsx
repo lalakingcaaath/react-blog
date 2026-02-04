@@ -2,102 +2,101 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import supabase from "../config/supabaseClient";
 import type { Blogposts } from "../types/Blogposts";
+import type { UserProfiles } from "../types/userProfiles";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import CommentsSection from "../components/CommentSection";
 
 interface BlogPostWithAuthor extends Blogposts {
-  user_profiles: {
-    firstName: string;
-    lastName: string;
-  } | null;
+  user_profiles: UserProfiles | null;
 }
 
 export default function ViewPost() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
   const [post, setPost] = useState<BlogPostWithAuthor | null>(null);
   const [loading, setLoading] = useState(true);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isOwner, setIsOwner] = useState(false);
+  const [currentImage, setCurrentImage] = useState(0);
+
+  // Helpers
+  const getPublicUrl = (path: string) =>
+    supabase.storage.from("blog-post").getPublicUrl(path).data.publicUrl;
+
+  const images = post?.images ?? [];
+  const hasImages = images.length > 0;
+
+  const nextImage = () => {
+    if (images.length < 2) return;
+    setCurrentImage((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    if (images.length < 2) return;
+    setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+  };
 
   const handleDelete = async () => {
+    if (!post) return;
     const confirmDelete = window.confirm(
-      "Are you sure you want to delete this post? This cannot be undone.",
+      "Are you sure? This cannot be undone.",
     );
-
     if (!confirmDelete) return;
 
-    if (post?.imageUpload) {
-      await supabase.storage.from("blog-post").remove([post.imageUpload]);
+    if (images.length > 0) {
+      await supabase.storage.from("blog-post").remove(images);
     }
 
-    const { error } = await supabase.from("blog-post").delete().eq("id", id);
-
+    const { error } = await supabase
+      .from("blog-post")
+      .delete()
+      .eq("id", post.id);
     if (error) {
-      console.log("Error deleting:", error);
-      alert("Error deleting post");
+      console.error(error);
+      alert("Failed");
     } else {
-      alert("Post deleted!");
+      alert("Deleted");
       navigate("/");
     }
   };
 
   useEffect(() => {
     if (!id) return;
-
-    const fetchPostAndUser = async () => {
-      const { data: postData, error } = await supabase
+    const fetchPost = async () => {
+      const { data, error } = await supabase
         .from("blog-post")
-        .select(
-          `
-          *,
-          user_profiles (firstName, lastName)
-        `,
-        )
+        .select(`*, user_profiles (*)`)
         .eq("id", id)
         .single();
-
       if (error) {
-        console.error("Error fetching post:", error);
-      } else if (postData) {
-        setPost(postData as BlogPostWithAuthor);
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (user && user.id === postData.user_id) {
-          setIsOwner(true);
-        }
-
-        if (postData.imageUpload) {
-          const { data: imgData } = supabase.storage
-            .from("blog-post")
-            .getPublicUrl(postData.imageUpload);
-          setImageUrl(imgData.publicUrl);
-        }
+        console.error(error);
+        setLoading(false);
+        return;
       }
+      setPost(data as BlogPostWithAuthor);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user && user.id === data.user_id) setIsOwner(true);
       setLoading(false);
     };
-
-    fetchPostAndUser();
+    fetchPost();
   }, [id]);
 
   if (loading)
     return (
       <div className="min-h-screen flex justify-center items-center">
-        <span className="loading loading-spinner loading-lg"></span>
+        <span className="loading loading-spinner loading-lg" />
       </div>
     );
-  if (!post) return <div>Post not found</div>;
+
+  if (!post) return <div className="text-center mt-10">Post not found</div>;
 
   const displayDate = post.updated_at
     ? new Date(post.updated_at)
     : new Date(post.created_at);
-
   const dateLabel = post.updated_at ? "Last Updated" : "Published on";
-
   const authorName = post.user_profiles
     ? `${post.user_profiles.firstName} ${post.user_profiles.lastName}`
     : "Unknown Author";
@@ -105,22 +104,20 @@ export default function ViewPost() {
   return (
     <div className="flex flex-col min-h-screen bg-base-200">
       <Navbar />
-      <main className="container mx-auto p-4 max-w-4xl grow">
+
+      <main className="container mx-auto max-w-4xl p-4 grow">
+        {/* HEADER */}
         <div className="flex justify-between items-center mb-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="btn btn-ghost gap-2 pl-0"
-          >
+          <button onClick={() => navigate(-1)} className="btn btn-ghost pl-0">
             ← Back
           </button>
-
           {isOwner && (
             <div className="flex gap-2">
               <button
                 className="btn btn-neutral"
                 onClick={() => navigate(`/editpost/${post.id}`)}
               >
-                Edit Post
+                Edit
               </button>
               <button
                 className="btn btn-error text-white"
@@ -132,45 +129,85 @@ export default function ViewPost() {
           )}
         </div>
 
-        <div className="card bg-base-100 shadow-xl overflow-hidden mb-8">
-          {imageUrl && (
-            <figure className="w-full h-64 md:h-96 relative">
-              <img
-                src={imageUrl}
-                alt={post.title || "Blog Post"}
-                className="w-full h-full object-cover"
-              />
-            </figure>
+        {/* POST CARD */}
+        <div className="card bg-base-100 shadow-xl overflow-hidden rounded-box">
+          {/* ----- CAROUSEL SECTION ----- */}
+          {hasImages && (
+            <div className="flex flex-col">
+              {/* 1. IMAGE DISPLAY */}
+              <figure className="relative w-full bg-base-200">
+                <div className="w-full h-96 md:h-[600px]">
+                  {" "}
+                  {/* Taller Image Height */}
+                  <img
+                    src={getPublicUrl(images[currentImage])}
+                    alt={`Slide ${currentImage + 1}`}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </figure>
+
+              {/* 2. NAVIGATION & DOTS (Below Image, Above Title, Centered) */}
+              {images.length > 1 && (
+                <div className="flex flex-col items-center justify-center gap-4 py-4 border-b border-base-200 bg-base-100">
+                  {/* Buttons Row */}
+                  <div className="flex items-center gap-6">
+                    <button
+                      onClick={prevImage}
+                      className="btn btn-circle btn-outline btn-sm md:btn-md"
+                    >
+                      ❮
+                    </button>
+
+                    {/* Dot Indicators */}
+                    <div className="flex gap-2">
+                      {images.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImage(index)}
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            index === currentImage
+                              ? "w-8 bg-primary"
+                              : "w-2 bg-base-300 hover:bg-base-400"
+                          }`}
+                        />
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={nextImage}
+                      className="btn btn-circle btn-outline btn-sm md:btn-md"
+                    >
+                      ❯
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
-          <div className="card-body md:p-10">
+
+          {/* CONTENT SECTION */}
+          <div className="card-body md:p-10 pt-6">
+            {" "}
+            {/* Reduced top padding since nav is above */}
             <h1 className="text-3xl md:text-5xl font-extrabold mb-4">
               {post.title}
             </h1>
-
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-base-content/70 mb-8 border-b border-base-200 pb-6">
-              <div className="flex items-center gap-2">
-                <div className="avatar placeholder">
-                  <div className="bg-neutral text-neutral-content rounded-full w-8">
-                    <span className="text-xs">{authorName.charAt(0)}</span>
-                  </div>
+            <div className="flex items-center gap-4 text-sm text-base-content/70 mb-8 border-b pb-6">
+              <div className="avatar placeholder">
+                <div className="bg-neutral text-neutral-content rounded-full w-10">
+                  <span className="text-xl">{authorName.charAt(0)}</span>
                 </div>
-                <span className="font-semibold">{authorName}</span>
               </div>
-
-              <div className="flex items-center gap-2">
-                <span>
-                  {dateLabel}{" "}
-                  <time className="font-medium">
-                    {displayDate.toLocaleDateString(undefined, {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </time>
+              <div className="flex flex-col">
+                <span className="font-bold text-base-content">
+                  {authorName}
+                </span>
+                <span className="text-xs">
+                  {dateLabel} {displayDate.toLocaleDateString()}
                 </span>
               </div>
             </div>
-
             <article className="prose prose-lg max-w-none whitespace-pre-wrap">
               {post.content}
             </article>
@@ -179,6 +216,7 @@ export default function ViewPost() {
 
         <CommentsSection postId={Number(id)} />
       </main>
+
       <Footer />
     </div>
   );

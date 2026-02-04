@@ -5,10 +5,11 @@ export type Blogposts = {
   updated_at: string;
   title: string | null;
   content: string | null;
-  imageUpload: string | null;
+  images: string[] | null;
 
   user_profiles?: {
     firstName: string;
     lastName: string;
+    email?: string;
   } | null;
 };

@@ -73,9 +73,12 @@ export default function Home() {
           </div>
         ) : (
           <>
-            {posts.map((post) => (
-              <Bloglist key={post.id} post={post} />
-            ))}
+            {/* 👇 FIX: Filter posts to ensure 'post' is not null before mapping */}
+            {posts
+              .filter((post) => post !== null && post !== undefined)
+              .map((post) => (
+                <Bloglist key={post.id} post={post} />
+              ))}
 
             {posts.length > 0 && (
               <div className="flex flex-col items-center mt-10 gap-2">

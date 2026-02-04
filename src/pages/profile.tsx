@@ -26,7 +26,6 @@ export default function Profile() {
           return;
         }
 
-        // Fetch firstName and lastName from table
         const profilePromise = supabase
           .from("user_profiles")
           .select("firstName, lastName")

@@ -1,7 +1,7 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import supabase from "../config/supabaseClient";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "../redux/store";
@@ -10,10 +10,39 @@ export default function CreatePost() {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [resetKey, setResetKey] = useState(0);
+
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
   const user_id = useSelector((state: RootState) => state.user.id);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+
+      setSelectedFiles((prev) => [...prev, ...newFiles]);
+
+      const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+      setPreviewUrls((prev) => [...prev, ...newPreviews]);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
+
+  const removeImage = (indexToRemove: number) => {
+    setSelectedFiles((prev) =>
+      prev.filter((_, index) => index !== indexToRemove),
+    );
+
+    URL.revokeObjectURL(previewUrls[indexToRemove]);
+    setPreviewUrls((prev) =>
+      prev.filter((_, index) => index !== indexToRemove),
+    );
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -23,22 +52,26 @@ export default function CreatePost() {
       return;
     }
 
-    let filePath = null;
+    const uploadedPaths: string[] = [];
 
-    if (imageFile) {
-      const fileName = `${Date.now()}_${imageFile.name}`;
+    if (selectedFiles.length > 0) {
+      try {
+        const uploadPromises = selectedFiles.map(async (file) => {
+          const fileName = `${Date.now()}_${file.name}`;
+          const { error } = await supabase.storage
+            .from("blog-post")
+            .upload(fileName, file);
 
-      const { data, error } = await supabase.storage
-        .from("blog-post")
-        .upload(fileName, imageFile);
+          if (error) throw error;
+          return fileName;
+        });
 
-      if (error) {
-        console.log("Error uploading image:", error);
-        alert("Failed to upload image.");
+        const results = await Promise.all(uploadPromises);
+        uploadedPaths.push(...results);
+      } catch (error) {
+        console.error("Upload error:", error);
+        alert("Failed to upload images.");
         return;
-      } else {
-        console.log("Image uploaded successfully:", data);
-        filePath = fileName;
       }
     }
 
@@ -46,7 +79,7 @@ export default function CreatePost() {
       {
         title: title,
         content: content,
-        imageUpload: filePath,
+        images: uploadedPaths,
         user_id: user_id,
       },
     ]);
@@ -55,7 +88,6 @@ export default function CreatePost() {
       console.log("Error creating blog post:", error);
       alert("Error creating post: " + error.message);
     } else {
-      console.log("Blog post created successfully");
       alert("Blog post created!");
       navigate("/");
     }
@@ -65,48 +97,87 @@ export default function CreatePost() {
     <div className="flex flex-col min-h-screen bg-base-200">
       <Navbar />
       <div className="container mx-auto p-4 space-y-4 max-w-3xl grow">
-        <div className="flex flex-col gap-10 bg-base-100 shadow-xl p-6 py-8 rounded-3xl mt-10">
-          <h2 className="text-4xl font-bold text-center">Create a Post</h2>
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            <label htmlFor="title" className="font-semibold">
-              Blog Title
-            </label>
-            <input
-              id="title"
-              onChange={(e) => setTitle(e.target.value)}
-              value={title}
-              type="text"
-              placeholder="Blog Title (e.g. What's cooking?)"
-              className="input input-bordered w-full"
-              required
-            />
+        <div className="flex flex-col gap-6 bg-base-100 shadow-xl p-6 py-8 rounded-3xl mt-10">
+          <h2 className="text-4xl font-bold text-center mb-4">Create a Post</h2>
+          <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+            <div className="form-control w-full">
+              <label htmlFor="title" className="label font-semibold">
+                <span className="label-text">Blog Title</span>
+              </label>
+              <input
+                id="title"
+                onChange={(e) => setTitle(e.target.value)}
+                value={title}
+                type="text"
+                placeholder="Blog Title"
+                className="input input-bordered w-full"
+                required
+              />
+            </div>
 
-            <label htmlFor="description" className="font-semibold">
-              Description
-            </label>
-            <textarea
-              id="description"
-              onChange={(e) => setContent(e.target.value)}
-              value={content}
-              placeholder="Your post description goes here..."
-              rows={5}
-              className="textarea textarea-bordered text-base"
-              required
-            ></textarea>
+            <div className="form-control w-full">
+              <label htmlFor="description" className="label font-semibold">
+                <span className="label-text">Description</span>
+              </label>
+              <textarea
+                id="description"
+                onChange={(e) => setContent(e.target.value)}
+                value={content}
+                placeholder="Your post description..."
+                rows={6}
+                className="textarea textarea-bordered text-base w-full"
+                required
+              ></textarea>
+            </div>
 
-            <label className="font-semibold">Cover Image (Optional)</label>
-            <input
-              key={resetKey}
-              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-              type="file"
-              className="file-input file-input-bordered w-full"
-              accept="image/jpeg, image/png, image/webp"
-            />
+            <div className="form-control w-full">
+              <label className="label font-semibold">
+                <span className="label-text">Images (Optional)</span>
+              </label>
+
+              <input
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                className="file-input file-input-bordered w-full mb-4"
+                accept="image/jpeg, image/png, image/webp"
+              />
+
+              {previewUrls.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {previewUrls.map((url, index) => (
+                    <div
+                      key={index}
+                      className="relative group w-full h-32 bg-base-200 rounded-lg overflow-hidden border border-base-300"
+                    >
+                      <img
+                        src={url}
+                        alt={`Preview ${index}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Remove Button */}
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="btn btn-circle btn-xs btn-error absolute top-1 right-1 shadow-md opacity-90 hover:opacity-100"
+                        title="Remove image"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <input
               type="submit"
-              value="Publish Post"
-              className="btn btn-neutral mt-4"
+              value={
+                selectedFiles.length > 0
+                  ? `Publish Post (${selectedFiles.length} images)`
+                  : "Publish Post"
+              }
+              className="btn btn-neutral mt-4 w-full md:w-auto md:self-end"
               disabled={!title || !content}
             />
           </form>

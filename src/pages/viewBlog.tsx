@@ -129,16 +129,12 @@ export default function ViewPost() {
           )}
         </div>
 
-        {/* POST CARD */}
         <div className="card bg-base-100 shadow-xl overflow-hidden rounded-box">
-          {/* ----- CAROUSEL SECTION ----- */}
           {hasImages && (
             <div className="flex flex-col">
-              {/* 1. IMAGE DISPLAY */}
               <figure className="relative w-full bg-base-200">
-                <div className="w-full h-96 md:h-[600px]">
+                <div className="w-full h-96 md:h-150">
                   {" "}
-                  {/* Taller Image Height */}
                   <img
                     src={getPublicUrl(images[currentImage])}
                     alt={`Slide ${currentImage + 1}`}
@@ -147,10 +143,8 @@ export default function ViewPost() {
                 </div>
               </figure>
 
-              {/* 2. NAVIGATION & DOTS (Below Image, Above Title, Centered) */}
               {images.length > 1 && (
                 <div className="flex flex-col items-center justify-center gap-4 py-4 border-b border-base-200 bg-base-100">
-                  {/* Buttons Row */}
                   <div className="flex items-center gap-6">
                     <button
                       onClick={prevImage}
@@ -159,7 +153,6 @@ export default function ViewPost() {
                       ❮
                     </button>
 
-                    {/* Dot Indicators */}
                     <div className="flex gap-2">
                       {images.map((_, index) => (
                         <button
@@ -186,10 +179,8 @@ export default function ViewPost() {
             </div>
           )}
 
-          {/* CONTENT SECTION */}
           <div className="card-body md:p-10 pt-6">
             {" "}
-            {/* Reduced top padding since nav is above */}
             <h1 className="text-3xl md:text-5xl font-extrabold mb-4">
               {post.title}
             </h1>

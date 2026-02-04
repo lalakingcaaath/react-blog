@@ -1,14 +1,21 @@
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import supabase from "../config/supabaseClient";
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "../redux/userSlice";
+import type { RootState } from "../redux/store";
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  async function signOut() {
+  const user = useSelector((state: RootState) => state.user.user);
+
+  async function handleSignOut() {
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.log("Error: " + error);
     } else {
+      dispatch(logout());
       navigate("/logout");
     }
   }
@@ -21,31 +28,48 @@ export default function Navbar() {
         </a>
       </div>
       <div className="flex gap-2">
-        <div className="dropdown dropdown-end">
-          <div
-            tabIndex={0}
-            role="button"
-            className="btn btn-ghost btn-circle avatar"
-          >
-            <div className="w-10 rounded-full">
-              <img
-                alt="Tailwind CSS Navbar component"
-                src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
-              />
+        {user ? (
+          <div className="dropdown dropdown-end">
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-ghost btn-circle avatar"
+            >
+              <div className="w-10 rounded-full">
+                <img
+                  alt="User Avatar"
+                  src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
+                />
+              </div>
             </div>
+            <ul
+              tabIndex={0}
+              className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
+            >
+              <li>
+                <a onClick={() => navigate("/profile")}>Profile</a>
+              </li>
+              <li>
+                <a onClick={handleSignOut}>Logout</a>
+              </li>
+            </ul>
           </div>
-          <ul
-            tabIndex={0}
-            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
-          >
-            <li>
-              <a onClick={() => navigate("/profile")}>Profile</a>
-            </li>
-            <li>
-              <a onClick={signOut}>Logout</a>
-            </li>
-          </ul>
-        </div>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => navigate("/login")}
+            >
+              Login
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => navigate("/register")}
+            >
+              Register
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

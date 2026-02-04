@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import supabase from "../config/supabaseClient";
-// 👇 Import the shared type
 import type { Blogposts } from "../types/Blogposts";
 
 type BloglistProps = {

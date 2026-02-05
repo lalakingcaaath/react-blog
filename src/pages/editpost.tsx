@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import PreviousButton from "../components/PreviousButton";
 import Footer from "../components/Footer";
+import RemoveButton from "../components/RemoveButton"; // Import the component
 import supabase from "../config/supabaseClient";
 
 export default function EditPost() {
@@ -173,25 +174,21 @@ export default function EditPost() {
                     <span className="text-xs font-bold text-gray-500 mb-3 block uppercase tracking-wide">
                       Current Images
                     </span>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                       {existingImages.map((path, idx) => (
-                        <div
-                          key={idx}
-                          className="relative group w-full h-32 rounded-xl overflow-hidden shadow-sm border border-base-300"
-                        >
-                          <img
-                            src={getPublicUrl(path)}
-                            alt="Existing"
-                            className="w-full h-full object-cover"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => markForDeletion(path)}
-                            className="btn btn-circle btn-xs btn-error absolute top-2 right-2 shadow-sm text-white"
-                            title="Remove image"
-                          >
-                            ✕
-                          </button>
+                        <div key={idx} className="flex flex-col">
+                          <div className="w-full h-32 rounded-xl overflow-hidden shadow-sm border border-base-300 relative mb-2">
+                            <img
+                              src={getPublicUrl(path)}
+                              alt="Existing"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex justify-start">
+                            <RemoveButton
+                              onClick={() => markForDeletion(path)}
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -213,28 +210,22 @@ export default function EditPost() {
 
                 {newPreviews.length > 0 && (
                   <div>
-                    <span className="text-xs font-bold text-success mb-3 block uppercase tracking-wide">
+                    <span className="text-xs font-bold text-gray-500 mb-3 block uppercase tracking-wide">
                       New Uploads Pending
                     </span>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                       {newPreviews.map((url, idx) => (
-                        <div
-                          key={idx}
-                          className="relative group w-full h-32 rounded-xl overflow-hidden shadow-sm border-2 border-success"
-                        >
-                          <img
-                            src={url}
-                            alt="New Preview"
-                            className="w-full h-full object-cover"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeNewFile(idx)}
-                            className="btn btn-circle btn-xs btn-neutral absolute top-2 right-2 shadow-sm text-white"
-                            title="Remove upload"
-                          >
-                            ✕
-                          </button>
+                        <div key={idx} className="flex flex-col">
+                          <div className="w-full h-32 rounded-xl overflow-hidden shadow-sm border-2 border-success relative mb-2">
+                            <img
+                              src={url}
+                              alt="New Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex justify-start">
+                            <RemoveButton onClick={() => removeNewFile(idx)} />
+                          </div>
                         </div>
                       ))}
                     </div>

@@ -8,6 +8,7 @@ import Logout from "./pages/logout";
 import CreatePost from "./pages/createpost";
 import ViewPost from "./pages/viewBlog";
 import EditPost from "./pages/editpost";
+import EditProfile from "./pages/editProfile";
 import ProtectedRoute from "./auth/protectedRoute";
 
 export const router = createBrowserRouter([
@@ -55,6 +56,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <EditPost />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "editprofile",
+        element: (
+          <ProtectedRoute>
+            <EditProfile />
           </ProtectedRoute>
         ),
       },

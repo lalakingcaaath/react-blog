@@ -85,6 +85,7 @@ export default function Profile() {
                 displayName || "Anonymous User"
               )}
             </h2>
+            <button className="btn btn-info mt-4">Edit Profile</button>
           </div>
         </div>
 

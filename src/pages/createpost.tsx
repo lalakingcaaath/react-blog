@@ -1,6 +1,7 @@
 import Navbar from "../components/Navbar";
 import PreviousButton from "../components/PreviousButton";
 import Footer from "../components/Footer";
+import RemoveButton from "../components/RemoveButton"; // Import the component
 import supabase from "../config/supabaseClient";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -146,25 +147,21 @@ export default function CreatePost() {
               />
 
               {previewUrls.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                   {previewUrls.map((url, index) => (
-                    <div
-                      key={index}
-                      className="relative group w-full h-32 bg-base-200 rounded-lg overflow-hidden border border-base-300"
-                    >
-                      <img
-                        src={url}
-                        alt={`Preview ${index}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="btn btn-circle btn-xs btn-error absolute top-1 right-1 shadow-md opacity-90 hover:opacity-100"
-                        title="Remove image"
-                      >
-                        ✕
-                      </button>
+                    <div key={index} className="flex flex-col">
+                      <div className="w-full h-32 bg-base-200 rounded-lg overflow-hidden border border-base-300 relative mb-2">
+                        <img
+                          src={url}
+                          alt={`Preview ${index}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      {/* Using the reusable RemoveButton here */}
+                      <div className="flex justify-start">
+                        <RemoveButton onClick={() => removeImage(index)} />
+                      </div>
                     </div>
                   ))}
                 </div>

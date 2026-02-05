@@ -21,10 +21,8 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // --- EDITING STATE ---
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState("");
-  // New state to track if user removed the image during edit
   const [editImageRemoved, setEditImageRemoved] = useState(false);
 
   const fetchComments = async () => {
@@ -87,12 +85,10 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
   const startEditing = (comment: Comments) => {
     setEditingId(comment.id);
     setEditContent(comment.comment);
-    // Reset the removal flag every time we start editing
     setEditImageRemoved(false);
   };
 
   const saveEdit = async (id: number, originalImagePath: string | null) => {
-    // Prevent saving if text is empty AND image is removed (or didn't exist)
     const isImageGone = !originalImagePath || editImageRemoved;
     if (!editContent.trim() && isImageGone) {
       alert("Comment cannot be empty");
@@ -101,11 +97,9 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
 
     const updates: any = { comment: editContent };
 
-    // If there was an image, and the user clicked remove
     if (originalImagePath && editImageRemoved) {
       updates.comment_image = null;
 
-      // Optional: Cleanup storage
       await supabase.storage.from("blog-post").remove([originalImagePath]);
     }
 
@@ -140,7 +134,6 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
     <div className="mt-12 max-w-2xl mx-auto">
       <h3 className="text-2xl font-bold mb-6">Comments ({comments.length})</h3>
 
-      {/* --- CREATE COMMENT FORM --- */}
       <form
         onSubmit={handlePostComment}
         className="mb-10 bg-base-100 p-4 rounded-xl shadow-sm border border-base-200"
@@ -198,7 +191,6 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
         </div>
       </form>
 
-      {/* --- COMMENT LIST --- */}
       <div className="space-y-8">
         {loading ? (
           <div className="flex justify-center">
@@ -242,7 +234,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
                     </div>
 
                     {isAuthor && editingId !== item.id && (
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                      <div className="flex gap-2">
                         <button
                           onClick={() => startEditing(item)}
                           className="text-xs text-blue-500 hover:underline cursor-pointer"
@@ -261,7 +253,6 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
                     )}
                   </div>
 
-                  {/* --- EDIT MODE --- */}
                   {editingId === item.id ? (
                     <div className="mt-2 bg-base-200/50 p-3 rounded-lg">
                       <textarea
@@ -270,7 +261,6 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
                         onChange={(e) => setEditContent(e.target.value)}
                       />
 
-                      {/* Display Existing Image in Edit Mode */}
                       {item.comment_image && !editImageRemoved && (
                         <div className="mb-4">
                           <p className="text-xs text-gray-500 mb-1">
@@ -305,7 +295,6 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
                       </div>
                     </div>
                   ) : (
-                    /* --- VIEW MODE --- */
                     <div>
                       <p className="text-base-content/80 text-sm leading-relaxed whitespace-pre-wrap">
                         {item.comment}

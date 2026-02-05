@@ -2,24 +2,23 @@ import Navbar from "../components/Navbar";
 import PreviousButton from "../components/PreviousButton";
 import Footer from "../components/Footer";
 import RemoveButton from "../components/RemoveButton";
-import CancelButton from "../components/CancelButton"; // Imported
+import CancelButton from "../components/CancelButton";
 import supabase from "../config/supabaseClient";
-import { useState, useEffect, useRef } from "react"; // Added useRef
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "../redux/store";
+import Loader from "../components/Loader";
 
 export default function CreatePost() {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const user_id = useSelector((state: RootState) => state.user.id);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -77,6 +76,8 @@ export default function CreatePost() {
       return;
     }
 
+    setIsSubmitting(true);
+
     const uploadedPaths: string[] = [];
 
     if (selectedFiles.length > 0) {
@@ -115,6 +116,13 @@ export default function CreatePost() {
     } else {
       alert("Blog post created!");
       navigate("/");
+    }
+    try {
+    } catch (err) {
+      console.error("Error creating blog post:", error);
+      alert("Error creating post");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -194,16 +202,19 @@ export default function CreatePost() {
             <div className="flex flex-col-reverse md:flex-row gap-4 mt-4 w-full justify-end items-center">
               <CancelButton onClick={handleCancel} />
 
-              <input
+              <button
                 type="submit"
-                value={
-                  selectedFiles.length > 0
-                    ? `Publish Post (${selectedFiles.length} images)`
-                    : "Publish Post"
-                }
                 className="btn btn-neutral w-full md:w-auto"
-                disabled={!title || !content}
-              />
+                disabled={!title || !content || isSubmitting}
+              >
+                {isSubmitting ? (
+                  <span className="loading loading-spinner loading-md"></span>
+                ) : selectedFiles.length > 0 ? (
+                  `Publish Post (${selectedFiles.length} images)`
+                ) : (
+                  "Publish Post"
+                )}
+              </button>
             </div>
           </form>
         </div>

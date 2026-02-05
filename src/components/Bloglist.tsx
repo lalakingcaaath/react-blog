@@ -27,22 +27,21 @@ export default function Bloglist({ post }: BloglistProps) {
   const content = post.content || "";
 
   return (
-    <div className="card lg:card-side bg-base-100 shadow-sm border border-base-200 overflow-hidden hover:shadow-md transition-shadow duration-300 mb-6">
-      <figure className="lg:w-1/3 w-full h-56 relative bg-base-200">
-        {fullImageUrl ? (
+    <div
+      className="card lg:card-side bg-base-100 shadow-sm border border-base-200 overflow-hidden hover:shadow-md transition-shadow duration-300 mb-6 cursor-pointer"
+      onClick={() => navigate(`/viewpost/${post.id}`)}
+    >
+      {fullImageUrl && (
+        <figure className="lg:w-1/3 w-full h-56 relative bg-base-200">
           <img
             src={fullImageUrl}
             alt={title}
             className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
           />
-        ) : (
-          <div className="text-neutral-content w-full h-full flex items-center justify-center bg-neutral">
-            <span className="font-bold opacity-50">No Image</span>
-          </div>
-        )}
-      </figure>
+        </figure>
+      )}
 
-      <div className="card-body lg:w-2/3 p-6">
+      <div className={`card-body p-6 ${fullImageUrl ? "lg:w-2/3" : "w-full"}`}>
         <div className="flex justify-between items-start mb-2">
           <h2 className="card-title text-2xl font-bold text-base-content line-clamp-1">
             {title}
@@ -78,7 +77,10 @@ export default function Bloglist({ post }: BloglistProps) {
         <div className="card-actions justify-end items-center mt-auto border-t border-base-200 pt-4">
           <button
             className="btn btn-primary btn-sm"
-            onClick={() => navigate(`/viewpost/${post.id}`)}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/viewpost/${post.id}`);
+            }}
           >
             Read more
           </button>

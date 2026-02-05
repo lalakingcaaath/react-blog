@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import PreviousButton from "../components/PreviousButton";
 import Footer from "../components/Footer";
-import RemoveButton from "../components/RemoveButton"; // Import the component
+import RemoveButton from "../components/RemoveButton";
 import supabase from "../config/supabaseClient";
 
 export default function EditPost() {
@@ -114,7 +114,7 @@ export default function EditPost() {
       alert("Error updating post");
     } else {
       alert("Post updated successfully!");
-      navigate(`/viewpost/${id}`);
+      navigate(`/viewpost/${id}`, { replace: true });
     }
   };
 

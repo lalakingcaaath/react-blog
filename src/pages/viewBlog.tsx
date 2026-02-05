@@ -4,6 +4,7 @@ import supabase from "../config/supabaseClient";
 import type { Blogposts } from "../types/Blogposts";
 import type { UserProfiles } from "../types/userProfiles";
 import Navbar from "../components/Navbar";
+import PreviousButton from "../components/PreviousButton";
 import Footer from "../components/Footer";
 import CommentsSection from "../components/CommentSection";
 
@@ -20,7 +21,6 @@ export default function ViewPost() {
   const [isOwner, setIsOwner] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
 
-  // Helpers
   const getPublicUrl = (path: string) =>
     supabase.storage.from("blog-post").getPublicUrl(path).data.publicUrl;
 
@@ -106,11 +106,8 @@ export default function ViewPost() {
       <Navbar />
 
       <main className="container mx-auto max-w-4xl p-4 grow">
-        {/* HEADER */}
         <div className="flex justify-between items-center mb-4">
-          <button onClick={() => navigate(-1)} className="btn btn-ghost pl-0">
-            ← Back
-          </button>
+          <PreviousButton />
           {isOwner && (
             <div className="flex gap-2">
               <button

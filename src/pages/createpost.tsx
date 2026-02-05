@@ -1,9 +1,10 @@
 import Navbar from "../components/Navbar";
 import PreviousButton from "../components/PreviousButton";
 import Footer from "../components/Footer";
-import RemoveButton from "../components/RemoveButton"; // Import the component
+import RemoveButton from "../components/RemoveButton";
+import CancelButton from "../components/CancelButton"; // Imported
 import supabase from "../config/supabaseClient";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // Added useRef
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "../redux/store";
@@ -15,6 +16,9 @@ export default function CreatePost() {
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  // 1. Create a ref to control the file input DOM element
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const user_id = useSelector((state: RootState) => state.user.id);
 
@@ -44,6 +48,31 @@ export default function CreatePost() {
     setPreviewUrls((prev) =>
       prev.filter((_, index) => index !== indexToRemove),
     );
+  };
+
+  // 2. The Cancel Handler
+  const handleCancel = () => {
+    // Optional: Add a confirmation if you don't want accidental clears
+    if (
+      (title || content || selectedFiles.length > 0) &&
+      !window.confirm("Clear all fields?")
+    ) {
+      return;
+    }
+
+    // Clear Text fields
+    setTitle("");
+    setContent("");
+
+    // Clear Images (Revoke URLs to free memory)
+    previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    setPreviewUrls([]);
+    setSelectedFiles([]);
+
+    // Clear the physical file input value
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -141,6 +170,7 @@ export default function CreatePost() {
               <input
                 type="file"
                 multiple
+                ref={fileInputRef} // 3. Attach the ref here
                 onChange={handleFileChange}
                 className="file-input file-input-bordered w-full mb-4"
                 accept="image/jpeg, image/png, image/webp"
@@ -158,7 +188,6 @@ export default function CreatePost() {
                         />
                       </div>
 
-                      {/* Using the reusable RemoveButton here */}
                       <div className="flex justify-start">
                         <RemoveButton onClick={() => removeImage(index)} />
                       </div>
@@ -168,16 +197,21 @@ export default function CreatePost() {
               )}
             </div>
 
-            <input
-              type="submit"
-              value={
-                selectedFiles.length > 0
-                  ? `Publish Post (${selectedFiles.length} images)`
-                  : "Publish Post"
-              }
-              className="btn btn-neutral mt-4 w-full md:w-auto md:self-end"
-              disabled={!title || !content}
-            />
+            {/* 4. Button Container */}
+            <div className="flex flex-col-reverse md:flex-row gap-4 mt-4 w-full justify-end items-center">
+              <CancelButton onClick={handleCancel} />
+
+              <input
+                type="submit"
+                value={
+                  selectedFiles.length > 0
+                    ? `Publish Post (${selectedFiles.length} images)`
+                    : "Publish Post"
+                }
+                className="btn btn-neutral w-full md:w-auto"
+                disabled={!title || !content}
+              />
+            </div>
           </form>
         </div>
       </div>

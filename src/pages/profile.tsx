@@ -85,12 +85,6 @@ export default function Profile() {
                 displayName || "Anonymous User"
               )}
             </h2>
-            <button
-              className="btn btn-primary w-full mt-5"
-              onClick={() => navigate("/createpost")}
-            >
-              + Create a post
-            </button>
           </div>
         </div>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import PreviousButton from "../components/PreviousButton";
 import Footer from "../components/Footer";
 import supabase from "../config/supabaseClient";
 
@@ -128,13 +129,7 @@ export default function EditPost() {
       <Navbar />
 
       <div className="container mx-auto p-4 space-y-4 max-w-3xl grow">
-        <button
-          onClick={() => navigate(-1)}
-          className="btn btn-ghost gap-2 pl-0 hover:bg-transparent self-start"
-        >
-          ← Back
-        </button>
-
+        <PreviousButton />
         <div className="flex flex-col gap-6 bg-base-100 shadow-xl p-6 py-8 rounded-3xl mt-2">
           <h2 className="text-4xl font-bold text-center mb-4">Edit Post</h2>
 

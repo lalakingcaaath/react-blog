@@ -1,4 +1,5 @@
 import Navbar from "../components/Navbar";
+import PreviousButton from "../components/PreviousButton";
 import Footer from "../components/Footer";
 import supabase from "../config/supabaseClient";
 import { useState, useEffect } from "react";
@@ -97,6 +98,7 @@ export default function CreatePost() {
     <div className="flex flex-col min-h-screen bg-base-200">
       <Navbar />
       <div className="container mx-auto p-4 space-y-4 max-w-3xl grow">
+        <PreviousButton />
         <div className="flex flex-col gap-6 bg-base-100 shadow-xl p-6 py-8 rounded-3xl mt-10">
           <h2 className="text-4xl font-bold text-center mb-4">Create a Post</h2>
           <form className="flex flex-col gap-6" onSubmit={handleSubmit}>

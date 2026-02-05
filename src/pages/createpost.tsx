@@ -208,7 +208,7 @@ export default function CreatePost() {
                 disabled={!title || !content || isSubmitting}
               >
                 {isSubmitting ? (
-                  <span className="loading loading-spinner loading-md"></span>
+                  <Loader />
                 ) : selectedFiles.length > 0 ? (
                   `Publish Post (${selectedFiles.length} images)`
                 ) : (

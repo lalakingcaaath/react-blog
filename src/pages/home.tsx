@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Bloglist from "../components/Bloglist";
+import CreateBlog from "../components/CreateBlog";
 import supabase from "../config/supabaseClient";
 import type { Blogposts } from "../types/Blogposts";
 
@@ -61,9 +62,9 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-base-200">
       <Navbar />
-
       <div className="container mx-auto p-4 space-y-6 max-w-5xl grow">
-        <h1 className="text-3xl font-bold mt-6 mb-4 text-center md:text-left">
+        <CreateBlog />
+        <h1 className="text-3xl font-bold mt-4 mb-4 text-center md:text-left">
           Recent Posts
         </h1>
 
@@ -73,7 +74,6 @@ export default function Home() {
           </div>
         ) : (
           <>
-            {/* 👇 FIX: Filter posts to ensure 'post' is not null before mapping */}
             {posts
               .filter((post) => post !== null && post !== undefined)
               .map((post) => (

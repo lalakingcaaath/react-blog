@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import Avatar from "../components/Avatar";
 import Footer from "../components/Footer";
 import Bloglist from "../components/Bloglist";
 import supabase from "../config/supabaseClient";
@@ -26,6 +25,7 @@ export default function Profile() {
           return;
         }
 
+        // Removed 'avatar' from the query since we don't use it anymore
         const profilePromise = supabase
           .from("user_profiles")
           .select("firstName, lastName")
@@ -69,6 +69,10 @@ export default function Profile() {
     ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
     : "Anonymous User";
 
+  const initial = profile?.firstName
+    ? profile.firstName.charAt(0).toUpperCase()
+    : "U";
+
   return (
     <div className="flex flex-col min-h-screen bg-base-200">
       <Navbar />
@@ -76,7 +80,12 @@ export default function Profile() {
       <div className="container mx-auto p-4 max-w-5xl grow flex flex-col md:flex-row gap-8">
         <div className="md:w-1/3 flex flex-col gap-6">
           <div className="card bg-base-100 shadow-xl p-6 flex flex-col items-center text-center">
-            <Avatar />
+            {/* --- STATIC AVATAR (Initials Only) --- */}
+            <div className="avatar placeholder mb-2">
+              <div className="bg-neutral text-neutral-content rounded-full w-32 h-32 flex items-center justify-center text-5xl font-bold ring ring-primary ring-offset-base-100 ring-offset-2">
+                <span>{initial}</span>
+              </div>
+            </div>
 
             <h2 className="text-3xl font-bold mt-4">
               {loading ? (
@@ -85,12 +94,8 @@ export default function Profile() {
                 displayName || "Anonymous User"
               )}
             </h2>
-            <button
-              className="btn btn-info mt-4"
-              onClick={() => navigate("/editprofile")}
-            >
-              Edit Profile
-            </button>
+
+            {/* Removed Edit Profile Button */}
           </div>
         </div>
 
@@ -110,16 +115,16 @@ export default function Profile() {
           ) : (
             <div className="card bg-base-100 shadow-sm p-10 text-center border-dashed border-2 border-base-300">
               <h3 className="text-lg font-bold text-gray-500">
-                You haven't posted yet
+                You haven't posted any blogs yet
               </h3>
               <p className="py-4 text-gray-400">
-                Share your first story with the world!
+                Share your first blog with the world!
               </p>
               <button
                 className="btn btn-outline btn-sm"
                 onClick={() => navigate("/createpost")}
               >
-                Start Writing
+                Create a blog
               </button>
             </div>
           )}

@@ -17,7 +17,6 @@ export default function CreatePost() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
-  // 1. Create a ref to control the file input DOM element
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const user_id = useSelector((state: RootState) => state.user.id);
@@ -50,9 +49,7 @@ export default function CreatePost() {
     );
   };
 
-  // 2. The Cancel Handler
   const handleCancel = () => {
-    // Optional: Add a confirmation if you don't want accidental clears
     if (
       (title || content || selectedFiles.length > 0) &&
       !window.confirm("Clear all fields?")
@@ -60,16 +57,13 @@ export default function CreatePost() {
       return;
     }
 
-    // Clear Text fields
     setTitle("");
     setContent("");
 
-    // Clear Images (Revoke URLs to free memory)
     previewUrls.forEach((url) => URL.revokeObjectURL(url));
     setPreviewUrls([]);
     setSelectedFiles([]);
 
-    // Clear the physical file input value
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -170,7 +164,7 @@ export default function CreatePost() {
               <input
                 type="file"
                 multiple
-                ref={fileInputRef} // 3. Attach the ref here
+                ref={fileInputRef}
                 onChange={handleFileChange}
                 className="file-input file-input-bordered w-full mb-4"
                 accept="image/jpeg, image/png, image/webp"
@@ -197,7 +191,6 @@ export default function CreatePost() {
               )}
             </div>
 
-            {/* 4. Button Container */}
             <div className="flex flex-col-reverse md:flex-row gap-4 mt-4 w-full justify-end items-center">
               <CancelButton onClick={handleCancel} />
 

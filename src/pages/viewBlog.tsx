@@ -7,7 +7,7 @@ import Navbar from "../components/Navbar";
 import PreviousButton from "../components/PreviousButton";
 import Footer from "../components/Footer";
 import CommentsSection from "../components/CommentSection";
-
+import Loader from "../components/Loader";
 interface BlogPostWithAuthor extends Blogposts {
   user_profiles: UserProfiles | null;
 }
@@ -19,7 +19,9 @@ export default function ViewPost() {
   const [post, setPost] = useState<BlogPostWithAuthor | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+
   const [currentImage, setCurrentImage] = useState(0);
+  const [imageLoading, setImageLoading] = useState(true);
 
   const getPublicUrl = (path: string) =>
     supabase.storage.from("blog-post").getPublicUrl(path).data.publicUrl;
@@ -29,11 +31,13 @@ export default function ViewPost() {
 
   const nextImage = () => {
     if (images.length < 2) return;
+    setImageLoading(true);
     setCurrentImage((prev) => (prev + 1) % images.length);
   };
 
   const prevImage = () => {
     if (images.length < 2) return;
+    setImageLoading(true);
     setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
   };
 
@@ -87,7 +91,7 @@ export default function ViewPost() {
   if (loading)
     return (
       <div className="min-h-screen flex justify-center items-center">
-        <span className="loading loading-spinner loading-lg" />
+        <Loader />
       </div>
     );
 
@@ -130,12 +134,17 @@ export default function ViewPost() {
           {hasImages && (
             <div className="flex flex-col">
               <figure className="relative w-full bg-base-200">
-                <div className="w-full h-96 md:h-150">
-                  {" "}
+                <div className="w-full h-96 md:h-150 flex items-center justify-center">
+                  {imageLoading && <Loader />}
+
                   <img
                     src={getPublicUrl(images[currentImage])}
                     alt={`Slide ${currentImage + 1}`}
-                    className="w-full h-full object-contain"
+                    onLoad={() => setImageLoading(false)}
+                    onError={() => setImageLoading(false)}
+                    className={`w-full h-full object-contain ${
+                      imageLoading ? "hidden" : "block"
+                    }`}
                   />
                 </div>
               </figure>
@@ -154,7 +163,12 @@ export default function ViewPost() {
                       {images.map((_, index) => (
                         <button
                           key={index}
-                          onClick={() => setCurrentImage(index)}
+                          onClick={() => {
+                            if (index !== currentImage) {
+                              setImageLoading(true);
+                              setCurrentImage(index);
+                            }
+                          }}
                           className={`h-2 rounded-full transition-all duration-300 ${
                             index === currentImage
                               ? "w-8 bg-primary"
@@ -177,7 +191,6 @@ export default function ViewPost() {
           )}
 
           <div className="card-body md:p-10 pt-6">
-            {" "}
             <h1 className="text-3xl md:text-5xl font-extrabold mb-4">
               {post.title}
             </h1>

@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import RemoveButton from "./RemoveButton";
 import supabase from "../config/supabaseClient";
 import type { Comments } from "../types/comment";
+import Loader from "./Loader";
 
 type CommentsSectionProps = {
   postId: number;
@@ -24,6 +25,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState("");
   const [editImageRemoved, setEditImageRemoved] = useState(false);
+  const [isSubmitted, setSubmitted] = useState(false);
 
   const fetchComments = async () => {
     const { data, error } = await supabase
@@ -49,6 +51,8 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       alert("You must be logged in to comment.");
       return;
     }
+
+    setSubmitted(true);
 
     let imagePath = null;
 
@@ -79,6 +83,13 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       setNewComment("");
       setImageFile(null);
       fetchComments();
+    }
+    try {
+    } catch {
+      console.error(error);
+      alert("Failed to post comment");
+    } finally {
+      setSubmitted(false);
     }
   };
 
@@ -186,7 +197,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
             className="btn btn-primary btn-sm px-6"
             disabled={!newComment.trim() && !imageFile}
           >
-            Post Comment
+            {isSubmitted ? <Loader /> : "Post Comment"}
           </button>
         </div>
       </form>
@@ -194,7 +205,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       <div className="space-y-8">
         {loading ? (
           <div className="flex justify-center">
-            <span className="loading loading-spinner text-primary"></span>
+            <Loader />
           </div>
         ) : comments.length === 0 ? (
           <p className="text-gray-500 italic text-center py-4">
